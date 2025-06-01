@@ -40,6 +40,7 @@ class DrawInformation:
         self.set_list(lst.copy())
         self.sorting_complete = False
         self.algo_name = ""
+        self.color_positions = {}  # Store positions to highlight
 
     def set_list(self, lst):
         self.lst = lst
@@ -96,8 +97,8 @@ def draw_list(window, draw_info, color_positions={}):
 
         color = draw_info.GRADIENTS[i % 3]
 
-        if i in color_positions:
-            color = color_positions[i]
+        if i in draw_info.color_positions:
+            color = draw_info.color_positions[i]
 
         pygame.draw.rect(window, color, (x, y, draw_info.block_width, draw_info.height - y + y_offset))
 
@@ -122,11 +123,19 @@ def bubble_sort(draw_info, lst, stop_event):
             num1 = lst[j]
             num2 = lst[j + 1]
 
+            # Highlight the elements being compared
+            draw_info.color_positions = {
+                j: DrawInformation.RED,
+                j + 1: DrawInformation.GREEN
+            }
+
             if num1 > num2:
                 lst[j], lst[j + 1] = lst[j + 1], lst[j]
 
             time.sleep(0.01)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -141,17 +150,30 @@ def insertion_sort(draw_info, lst, stop_event):
         current = lst[i]
         j = i
 
+        # Highlight the current element
+        draw_info.color_positions = {i: DrawInformation.GREEN}
+
         while j > 0 and lst[j - 1] > current:
             if stop_event.is_set():
                 return
+
+            # Highlight the elements being compared
+            draw_info.color_positions = {
+                j: DrawInformation.GREEN,
+                j - 1: DrawInformation.RED
+            }
 
             lst[j] = lst[j - 1]
             j -= 1
             time.sleep(0.01)
 
         lst[j] = current
+        # Highlight the final position
+        draw_info.color_positions = {j: DrawInformation.GREEN}
         time.sleep(0.01)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -164,6 +186,12 @@ def stalin_sort(draw_info, lst, stop_event):
         if stop_event.is_set():
             return
 
+        # Highlight the elements being compared
+        draw_info.color_positions = {
+            i - 1: DrawInformation.GREEN,
+            i: DrawInformation.RED
+        }
+
         if lst[i] < lst[i - 1]:
             lst.pop(i)
         else:
@@ -171,6 +199,8 @@ def stalin_sort(draw_info, lst, stop_event):
 
         time.sleep(0.05)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -186,10 +216,20 @@ def bogo_sort(draw_info, lst, stop_event):
         if stop_event.is_set():
             return
 
+        # Color two random elements to show activity
+        if len(lst) > 1:
+            i, j = random.sample(range(len(lst)), 2)
+            draw_info.color_positions = {
+                i: DrawInformation.RED,
+                j: DrawInformation.GREEN
+            }
+
         random.shuffle(lst)
         attempts += 1
         time.sleep(0.1)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -200,16 +240,33 @@ def quick_sort_helper(draw_info, lst, start, end, stop_event):
     pivot = lst[end]
     partition_idx = start
 
+    # Highlight the pivot
+    draw_info.color_positions = {end: DrawInformation.BLUE}
+    time.sleep(0.01)
+
     for i in range(start, end):
         if stop_event.is_set():
             return
+
+        # Highlight the elements being compared
+        draw_info.color_positions = {
+            i: DrawInformation.RED,
+            partition_idx: DrawInformation.GREEN,
+            end: DrawInformation.BLUE  # pivot
+        }
 
         if lst[i] <= pivot:
             lst[i], lst[partition_idx] = lst[partition_idx], lst[i]
             partition_idx += 1
         time.sleep(0.01)
 
+    # Highlight the final pivot position
+    draw_info.color_positions = {
+        partition_idx: DrawInformation.GREEN,
+        end: DrawInformation.RED
+    }
     lst[partition_idx], lst[end] = lst[end], lst[partition_idx]
+    time.sleep(0.01)
 
     quick_sort_helper(draw_info, lst, start, partition_idx - 1, stop_event)
     quick_sort_helper(draw_info, lst, partition_idx + 1, end, stop_event)
@@ -221,12 +278,19 @@ def quick_sort(draw_info, lst, stop_event):
 
     quick_sort_helper(draw_info, lst, 0, len(lst) - 1, stop_event)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
 def merge_sort_helper(draw_info, lst, left, right, stop_event):
     if left < right and not stop_event.is_set():
         mid = (left + right) // 2
+
+        # Highlight the current range
+        for i in range(left, right + 1):
+            draw_info.color_positions[i] = DrawInformation.PURPLE
+        time.sleep(0.01)
 
         merge_sort_helper(draw_info, lst, left, mid, stop_event)
         merge_sort_helper(draw_info, lst, mid + 1, right, stop_event)
@@ -238,13 +302,24 @@ def merge(draw_info, lst, left, mid, right, stop_event):
     if stop_event.is_set():
         return
 
-    left_half = lst[left:mid+1]
-    right_half = lst[mid+1:right+1]
+    left_half = lst[left:mid + 1]
+    right_half = lst[mid + 1:right + 1]
+
+    # Highlight the merging range
+    for i in range(left, right + 1):
+        draw_info.color_positions[i] = DrawInformation.PURPLE
+    time.sleep(0.01)
 
     i = j = 0
     k = left
 
     while i < len(left_half) and j < len(right_half) and not stop_event.is_set():
+        # Highlight the elements being compared
+        draw_info.color_positions = {
+            left + i: DrawInformation.RED if k == left + i else DrawInformation.PURPLE,
+            mid + 1 + j: DrawInformation.GREEN if k == mid + 1 + j else DrawInformation.PURPLE
+        }
+
         if left_half[i] <= right_half[j]:
             lst[k] = left_half[i]
             i += 1
@@ -255,12 +330,18 @@ def merge(draw_info, lst, left, mid, right, stop_event):
         time.sleep(0.01)
 
     while i < len(left_half) and not stop_event.is_set():
+        # Highlight the current element
+        draw_info.color_positions[left + i] = DrawInformation.GREEN
+
         lst[k] = left_half[i]
         i += 1
         k += 1
         time.sleep(0.01)
 
     while j < len(right_half) and not stop_event.is_set():
+        # Highlight the current element
+        draw_info.color_positions[mid + 1 + j] = DrawInformation.GREEN
+
         lst[k] = right_half[j]
         j += 1
         k += 1
@@ -273,6 +354,8 @@ def merge_sort(draw_info, lst, stop_event):
 
     merge_sort_helper(draw_info, lst, 0, len(lst) - 1, stop_event)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -280,23 +363,33 @@ def miracle_sort(draw_info, lst, stop_event):
     # wait for a miracle to happen and the list to sort itself
     lst = lst.copy()
     draw_info.lst = lst
-    
+
     def is_sorted(arr):
         return all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
-    
+
     attempts = 0
     while not is_sorted(lst) and attempts < 50:
         if stop_event.is_set():
             return
-        
+
+        # Highlight random elements to show activity
+        if len(lst) > 2:
+            positions = random.sample(range(len(lst)), min(3, len(lst)))
+            draw_info.color_positions = {
+                pos: DrawInformation.GREEN if random.random() > 0.5 else DrawInformation.RED
+                for pos in positions
+            }
+
         # waiting for the miracle
         time.sleep(0.2)
         attempts += 1
-        
+
         # simulate small chances of the miracle happening
         if random.random() < 0.01:
             lst.sort()
-    
+
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -309,16 +402,35 @@ def selection_sort(draw_info, lst, stop_event):
             return
 
         min_idx = i
+        # Highlight current position
+        draw_info.color_positions = {i: DrawInformation.BLUE}
+
         for j in range(i + 1, len(lst)):
             if stop_event.is_set():
                 return
 
+            # Highlight the elements being compared
+            draw_info.color_positions = {
+                i: DrawInformation.BLUE,
+                min_idx: DrawInformation.GREEN,
+                j: DrawInformation.RED
+            }
+
             if lst[j] < lst[min_idx]:
                 min_idx = j
 
+            time.sleep(0.01)
+
+        # Highlight the swap
+        draw_info.color_positions = {
+            i: DrawInformation.RED,
+            min_idx: DrawInformation.GREEN
+        }
         lst[i], lst[min_idx] = lst[min_idx], lst[i]
         time.sleep(0.01)
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -328,31 +440,38 @@ def sleep_sort(draw_info, lst, stop_event):
     draw_info.lst = lst
     result = []
     n = len(lst)
-    
+
     # scaling factor for sleep - smaller for demonstration
     scale = 0.05
-    
-    def sleep_and_add(val):
+
+    def sleep_and_add(val, idx):
         if stop_event.is_set():
             return
+
+        # Highlight the element about to wake up
+        draw_info.color_positions[idx] = DrawInformation.RED
         time.sleep(val * scale)
+
         result.append(val)
-        
+
         # update the list after each addition
         temp = result.copy() + [0] * (n - len(result))
         for i in range(len(temp)):
             if i < len(lst):
                 lst[i] = temp[i]
-    
+                # Highlight the newly placed element
+                if i == len(result) - 1:
+                    draw_info.color_positions[i] = DrawInformation.GREEN
+
     threads = []
-    for val in lst:
-        t = threading.Thread(target=sleep_and_add, args=(val,))
+    for idx, val in enumerate(lst):
+        t = threading.Thread(target=sleep_and_add, args=(val, idx))
         t.daemon = True
         threads.append(t)
-        
+
     for t in threads:
         t.start()
-        
+
     # wait maximum time for all threads to complete
     max_wait = max(lst) * scale + 1
     start_time = time.time()
@@ -360,12 +479,14 @@ def sleep_sort(draw_info, lst, stop_event):
         if stop_event.is_set():
             return
         time.sleep(0.1)
-    
+
     # complete the final result
     for i in range(len(result)):
         if i < len(lst):
             lst[i] = result[i]
-    
+
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -385,6 +506,12 @@ def cocktail_sort(draw_info, lst, stop_event):
             if stop_event.is_set():
                 return
 
+            # Highlight the elements being compared
+            draw_info.color_positions = {
+                i: DrawInformation.RED,
+                i + 1: DrawInformation.GREEN
+            }
+
             if lst[i] > lst[i + 1]:
                 lst[i], lst[i + 1] = lst[i + 1], lst[i]
                 swapped = True
@@ -401,6 +528,12 @@ def cocktail_sort(draw_info, lst, stop_event):
             if stop_event.is_set():
                 return
 
+            # Highlight the elements being compared
+            draw_info.color_positions = {
+                i: DrawInformation.RED,
+                i + 1: DrawInformation.GREEN
+            }
+
             if lst[i] > lst[i + 1]:
                 lst[i], lst[i + 1] = lst[i + 1], lst[i]
                 swapped = True
@@ -408,6 +541,8 @@ def cocktail_sort(draw_info, lst, stop_event):
 
         start += 1
 
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -415,27 +550,37 @@ def quantum_bogosort(draw_info, lst, stop_event):
     # destroy the universe and create a new one where the list is sorted
     lst = lst.copy()
     draw_info.lst = lst
-    
+
     def is_sorted(arr):
         return all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
-    
+
     attempts = 0
     while not is_sorted(lst) and attempts < 50:
         if stop_event.is_set():
             return
-        
+
+        # Color random elements to show quantum activity
+        if len(lst) > 3:
+            positions = random.sample(range(len(lst)), min(5, len(lst)))
+            draw_info.color_positions = {
+                pos: DrawInformation.RED if random.random() > 0.5 else DrawInformation.GREEN
+                for pos in positions
+            }
+
         # simulate universe destruction
         time.sleep(0.3)
-        
+
         # try to create a new universe with sorted list
         if random.random() < 0.1:  # 10% chance of success
             lst.sort()
             break
-        
+
         # otherwise, try another random universe
         random.shuffle(lst)
         attempts += 1
-    
+
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -444,24 +589,33 @@ def brutal_sort(draw_info, lst, stop_event):
     # (actually just simulating for demonstration)
     lst = lst.copy()
     draw_info.lst = lst
-    
+
     def is_sorted(arr):
         return all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
-    
+
     # simulate brutal effort
     attempts = 0
     while not is_sorted(lst) and attempts < 30:
         if stop_event.is_set():
             return
-        
+
+        # Highlight random elements to show activity
+        if len(lst) > 2:
+            i = random.randint(0, len(lst) - 2)
+            j = random.randint(i + 1, len(lst) - 1)
+            draw_info.color_positions = {
+                i: DrawInformation.RED,
+                j: DrawInformation.GREEN
+            }
+
         # simulate testing a permutation
         time.sleep(0.1)
-        
+
         # make some random changes to simulate progress
         if attempts % 3 == 0 and len(lst) > 1:
             # the more we advance, the smarter changes we make
             progress = min(1.0, attempts / 20.0)
-            
+
             if random.random() < progress:
                 # sort a small portion
                 start = random.randint(0, len(lst) - 2)
@@ -472,13 +626,15 @@ def brutal_sort(draw_info, lst, stop_event):
                 i = random.randint(0, len(lst) - 1)
                 j = random.randint(0, len(lst) - 1)
                 lst[i], lst[j] = lst[j], lst[i]
-        
+
         attempts += 1
-        
+
         # eventually give up and sort everything
         if attempts >= 50:
             lst.sort()
-    
+
+    # Clear the color positions when done
+    draw_info.color_positions = {}
     draw_info.sorting_complete = True
 
 
@@ -492,6 +648,7 @@ def restart_sorting(algo_infos, original_list, stop_event):
     for info in algo_infos:
         info.set_list(original_list.copy())
         info.sorting_complete = False
+        info.color_positions = {}  # Clear color positions
 
     # create and start new threads with all algorithms
     algorithms = [
